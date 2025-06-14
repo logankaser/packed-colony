@@ -2,7 +2,11 @@
 name = "packed-colony"
 version = "0.1.0"
 edition = "2024"
-
-[dependencies]
-
-[dev-dependencies]
+description = "Cache-friendly packed associative data structure"
+license = "MIT"
+documentation = "https://docs.rs/packed-colony"
+readme = "README.md"
+homepage = "https://github.com/logankaser/packed-colony"
+repository = "https://github.com/logankaser/packed-colony"
+categories = ["data-structures"]
+include = ["Cargo.toml", "src", "README.md", "LICENSE.md"]
