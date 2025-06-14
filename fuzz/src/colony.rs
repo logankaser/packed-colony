@@ -26,8 +26,8 @@ fuzz_target!(|operations: Vec<Operation>| {
             }
             Operation::Remove(index) => {
                 if let Some(value) = values.remove(&(index as usize)) {
-                    let colony_value = colony.get(index as usize);
-                    assert_eq!(*colony_value, value);
+                    let colony_value = colony[index as usize];
+                    assert_eq!(colony_value, value);
                     colony.remove(index as usize);
                 }
             }
@@ -35,6 +35,7 @@ fuzz_target!(|operations: Vec<Operation>| {
     }
 
     for (index, value) in values {
-        assert_eq!(value, *colony.get(index));
+        assert_eq!(value, colony[index]);
+        assert_eq!(value, *colony.get(index).unwrap());
     }
 });
