@@ -1,6 +1,6 @@
 [package]
 name = "packed-colony"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Cache-friendly packed associative data structure"
 license = "MIT"
