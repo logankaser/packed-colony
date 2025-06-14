@@ -1,4 +1,7 @@
-use std::vec::Vec;
+use std::{
+    ops::{Deref, DerefMut},
+    vec::Vec,
+};
 
 #[derive(Default, Debug, Clone)]
 /// Can be used to implement your own custom Colony.
@@ -9,10 +12,19 @@ pub struct ColonyIndex {
     // Member Index -> ID
     index_to_id: Vec<usize>,
     // Freed IDs which can be re-used.
+    // Used as a stack.
     freed: Vec<usize>,
 }
 
 impl ColonyIndex {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            id_to_index: Vec::with_capacity(capacity),
+            index_to_id: Vec::with_capacity(capacity),
+            freed: Vec::new(),
+        }
+    }
+
     pub fn insert(&mut self, index: usize) -> usize {
         if let Some(id) = self.freed.pop() {
             self.id_to_index[id] = index;
@@ -74,8 +86,10 @@ impl ColonyIndex {
 
 #[derive(Debug, Clone)]
 /// # Colony
-/// Cache-friendly packed associative data structure.
-/// ```
+/// Cache-friendly packed associative data structure.  
+/// O(1) lookup and deletion, O(1) insetion (amortized).  
+/// Ideal iteration, data is tightly packed in one allocation.
+/// ```rust
 /// # use packed_colony::Colony;
 /// let mut library = Colony::new();
 /// let book1 = library.insert("Foucault's Pendulum");
@@ -88,23 +102,23 @@ impl ColonyIndex {
 /// elements are added or removed.
 /// ### Advantages
 /// * Very fast lookup (lookup is two array accesses)
-/// * Underlying `Vec<T>` storage is accessible (as `elements`) and tightly-packed:
-/// ```
+/// * Underlying memory is accessible -- `as_slice()`, `as_mut_slice()` -- and tightly-packed:
+/// ```rust
 /// # use packed_colony::Colony;
 /// let mut scores = Colony::new();
 /// for x in 1..100 {
 ///   scores.insert(x);
 /// }
-/// for score in scores.elements {
+/// for score in scores {
 ///   println!("{}", score);
 /// }
 /// ```
-/// * Underlying `Vec` acts like a slab or pool allocator, amortising allocation cost
+/// * Acts like a slab or pool allocator, amortising allocation cost
 /// * Faster than a `HashMap` for lookup and Iteration
 /// ### Disadvantages
 /// * User does not pick the keys
 /// * Keys may be re-used, meaning in:
-/// ```
+/// ```rust
 /// # use packed_colony::Colony;
 /// let mut world = Colony::new();
 /// let omega = world.insert("omega");
@@ -123,8 +137,7 @@ impl ColonyIndex {
 /// This naturally keeps all the data tightly packed.
 pub struct Colony<T> {
     index: ColonyIndex,
-    /// Manually adding or removing elements is not safe.
-    pub elements: Vec<T>,
+    elements: Vec<T>,
 }
 
 impl<T> Default for Colony<T> {
@@ -139,6 +152,16 @@ impl<T> Default for Colony<T> {
 impl<T> Colony<T> {
     pub fn new() -> Self {
         Colony::default()
+    }
+
+    /// Constructs a new, empty Colony<T> with at least the specified capacity.
+    /// # Panics
+    /// Panics if the new capacity exceeds isize::MAX bytes.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            index: ColonyIndex::with_capacity(capacity),
+            elements: Vec::with_capacity(capacity),
+        }
     }
 
     pub fn insert(&mut self, entity: T) -> usize {
@@ -169,13 +192,17 @@ impl<T> Colony<T> {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.elements.len()
-    }
-
     pub fn clear(&mut self) {
         self.index = ColonyIndex::default();
         self.elements.clear();
+    }
+
+    pub const fn as_slice(&self) -> &[T] {
+        self.elements.as_slice()
+    }
+
+    pub const fn as_mut_slice(&mut self) -> &mut [T] {
+        self.elements.as_mut_slice()
     }
 }
 
@@ -190,6 +217,29 @@ impl<T> std::ops::Index<usize> for Colony<T> {
 impl<T> std::ops::IndexMut<usize> for Colony<T> {
     fn index_mut(&mut self, id: usize) -> &mut Self::Output {
         self.elements.index_mut(self.index.to_index_unchecked(id))
+    }
+}
+
+impl<T> Deref for Colony<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        self.elements.deref()
+    }
+}
+
+impl<T> DerefMut for Colony<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.elements.deref_mut()
+    }
+}
+
+impl<T> IntoIterator for Colony<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.elements.into_iter()
     }
 }
 

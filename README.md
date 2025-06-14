@@ -21,18 +21,18 @@ Unlike the indexes of a `Vec`, the ids of a `Colony` remain stable as
 elements are added or removed.
 ### Advantages
 * Very fast lookup (lookup is two array accesses)
-* Underlying `Vec<T>` storage is accessible (as `elements`) and tightly-packed:
+* Underlying memory is accessible -- `as_slice()`, `as_mut_slice()` -- and tightly-packed:
 ```rust
 use packed_colony::Colony;
 let mut scores = Colony::new();
 for x in 1..100 {
   scores.insert(x);
 }
-for score in scores.elements {
+for score in scores {
   println!("{}", score);
 }
 ```
-* Underlying `Vec` acts like a slab or pool allocator, amortising allocation cost
+* Acts like a slab or pool allocator, amortising allocation cost
 * Faster than a `HashMap` for lookup and Iteration
 ### Disadvantages
 * User does not pick the keys
