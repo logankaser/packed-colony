@@ -1,0 +1,27 @@
+[package]
+name = "packed-colony-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
+
+[dependencies.packed-colony]
+path = ".."
+
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+lto = "thin"
+
+[[bin]]
+name = "colony"
+path = "src/colony.rs"
+test = false
+doc = false
